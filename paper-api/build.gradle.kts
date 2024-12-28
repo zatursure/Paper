@@ -1,12 +1,70 @@
+import java.io.ByteArrayOutputStream
+import kotlin.io.path.relativeTo
+
 plugins {
     `java-library`
     `maven-publish`
     idea
+    checkstyle
 }
 
 java {
     withSourcesJar()
     withJavadocJar()
+}
+
+checkstyle {
+    toolVersion = "10.21.0"
+    configDirectory = project.file(".checkstyle")
+}
+
+abstract class DiffedFilesSource: ValueSource<Set<String>, ValueSourceParameters.None> {
+
+    @get:Inject
+    abstract val exec: ExecOperations
+
+    override fun obtain(): Set<String> {
+        val remoteNameStream = ByteArrayOutputStream()
+        exec.exec {
+            commandLine("git", "remote", "-v")
+            standardOutput = remoteNameStream
+        }
+        val remoteName = String(remoteNameStream.toByteArray(), Charsets.UTF_8).trim().split("\n").filter {
+            it.contains("PaperMC/Paper", ignoreCase = true)
+        }.take(1).map { it.split("\t")[0] }.singleOrNull() ?: "origin"
+        exec.exec {
+            commandLine("git", "fetch", remoteName, "main", "-q")
+        }
+        val diffStream = ByteArrayOutputStream()
+        exec.exec {
+            commandLine("git", "diff", "--name-only", "$remoteName/main")
+            standardOutput = diffStream
+        }
+        return String(diffStream.toByteArray(), Charsets.UTF_8).split("\n").toSet()
+    }
+}
+
+val typeUseAnnotations = setOf(
+    "NonNull",
+    "Nullable",
+    "NotNull",
+    "Unmodifiable",
+    "UnmodifiableView",
+    "Range",
+    "Positive",
+)
+
+tasks.withType<Checkstyle> {
+    configProperties = mapOf("type_use_annotations" to typeUseAnnotations.joinToString("|"))
+    val rootDir = project.rootDir
+    val diffedFiles = providers.of(DiffedFilesSource::class) {}
+    include { fileTreeElement ->
+        if (fileTreeElement.isDirectory) {
+            return@include true
+        }
+        val absPath = fileTreeElement.file.toPath().toAbsolutePath().relativeTo(rootDir.toPath())
+        return@include fileTreeElement.isDirectory || diffedFiles.get().contains(absPath.toString())
+    }
 }
 
 val annotationsVersion = "26.0.1"

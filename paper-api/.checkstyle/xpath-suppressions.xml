@@ -1,0 +1,14 @@
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionXpathFilter Experimental Configuration 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2_xpath_experimental.dtd">
+<suppressions>
+    <!--ignores MissingJavadoc for @Deprecated(forRemoval=) children or ApiStatus.Internal children-->
+    <suppress-xpath checks="MissingJavadoc(Method|Type)" query="//*[MODIFIERS/ANNOTATION[(@text = 'Deprecated' or *[@text = 'Deprecated'] and ANNOTATION_MEMBER_VALUE_PAIR/IDENT[@text='forRemoval'])]]/descendant-or-self::node()" />
+    <suppress-xpath checks="MissingJavadoc(Method|Type)" query="//*[MODIFIERS/ANNOTATION/DOT[@text = 'Internal' or *[@text = 'Internal']]]/descendant-or-self::node()" />
+
+    <!--skip for private classes-->
+    <suppress-xpath checks="FinalClass" query="//CLASS_DEF[MODIFIERS/LITERAL_PRIVATE]"/>
+
+    <!--skip for classes inside of methods-->
+    <suppress-xpath checks="HideUtilityClassConstructor" query="//CLASS_DEF[ancestor::METHOD_DEF]" />
+</suppressions>

@@ -1,4 +1,6 @@
+import io.papermc.paperweight.util.path
 import java.io.ByteArrayOutputStream
+import java.nio.file.Files
 import kotlin.io.path.relativeTo
 
 plugins {
@@ -18,29 +20,50 @@ checkstyle {
     configDirectory = project.file(".checkstyle")
 }
 
-abstract class DiffedFilesSource: ValueSource<Set<String>, ValueSourceParameters.None> {
+data class DiffedFileData(val diffedFiles: Set<String>, val filesToRemoveFromUnchecked: Set<String>)
+
+abstract class DiffedFilesSource: ValueSource<DiffedFileData, DiffedFilesSource.Parameters> {
+
+    companion object {
+        val SPECIAL_USERS: Set<String> = setOf(
+            "Jake Potrebic"
+        )
+    }
+
+    interface Parameters : ValueSourceParameters {
+
+        @get:InputFile
+        val uncheckedFilesTxt: RegularFileProperty
+    }
 
     @get:Inject
     abstract val exec: ExecOperations
 
-    override fun obtain(): Set<String> {
-        val remoteNameStream = ByteArrayOutputStream()
+    private fun run(vararg args: String): String {
+        val out = ByteArrayOutputStream()
         exec.exec {
-            commandLine("git", "remote", "-v")
-            standardOutput = remoteNameStream
+            commandLine(*args)
+            standardOutput = out
         }
-        val remoteName = String(remoteNameStream.toByteArray(), Charsets.UTF_8).trim().split("\n").filter {
+        return String(out.toByteArray(), Charsets.UTF_8).trim()
+    }
+
+    override fun obtain(): DiffedFileData {
+        val remoteName = run("git", "remote", "-v").split("\n").filter {
             it.contains("PaperMC/Paper", ignoreCase = true)
         }.take(1).map { it.split("\t")[0] }.singleOrNull() ?: "origin"
-        exec.exec {
-            commandLine("git", "fetch", remoteName, "main", "-q")
+        run("git", "fetch", remoteName, "main", "-q")
+        val changedFiles = run("git", "diff", "--name-only", "$remoteName/main").split("\n").toSet()
+        if (changedFiles.isNotEmpty()) {
+            val uncheckedFiles = Files.readString(parameters.uncheckedFilesTxt.path).split("\n").toSet()
+            val gitUser = System.getenv("GIT_USER") ?: run("git", "config", "--get", "user.name")
+            return if (gitUser in SPECIAL_USERS) {
+                DiffedFileData(changedFiles, changedFiles.intersect(uncheckedFiles))
+            } else {
+                DiffedFileData(changedFiles - uncheckedFiles, emptySet())
+            }
         }
-        val diffStream = ByteArrayOutputStream()
-        exec.exec {
-            commandLine("git", "diff", "--name-only", "$remoteName/main")
-            standardOutput = diffStream
-        }
-        return String(diffStream.toByteArray(), Charsets.UTF_8).split("\n").toSet()
+        return DiffedFileData(emptySet(), emptySet())
     }
 }
 
@@ -71,13 +94,21 @@ tasks.withType<Checkstyle> {
     )
     val runForAll = providers.gradleProperty("runCheckstyleForAll")
     val rootDir = project.rootDir
-    val diffedFiles = providers.of(DiffedFilesSource::class) {}
+    val diffedFiles = providers.of(DiffedFilesSource::class) {
+        parameters.uncheckedFilesTxt.set(checkstyle.configDirectory.file("unchecked-files.txt"))
+    }
     include { fileTreeElement ->
         if (fileTreeElement.isDirectory || runForAll.isPresent) {
             return@include true
         }
         val absPath = fileTreeElement.file.toPath().toAbsolutePath().relativeTo(rootDir.toPath())
-        return@include diffedFiles.get().contains(absPath.toString())
+        return@include diffedFiles.get().diffedFiles.contains(absPath.toString())
+    }
+    doLast {
+        val uncheckedFiles = diffedFiles.get().filesToRemoveFromUnchecked
+        if (uncheckedFiles.isNotEmpty()) {
+            error("Remove the following files from unchecked-files.txt: ${uncheckedFiles.joinToString("\n\t", prefix = "\n")}")
+        }
     }
 }
 

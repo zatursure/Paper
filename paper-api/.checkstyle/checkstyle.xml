@@ -79,10 +79,9 @@
         <module name="SimplifyBooleanExpression"/>
         <module name="SimplifyBooleanReturn"/>
         <module name="StringLiteralEquality"/>
-        <module name="UnnecessaryParentheses"/> <!--TODO maybe not? sometimes redundant parens are helpful-->
         <module name="UnnecessarySemicolonAfterOuterTypeDeclaration"/>
         <module name="UnnecessarySemicolonAfterTypeMemberDeclaration"/>
-        <module name="UnnecessarySemicolonInEnumeration"/> <!--TODO maybe not?-->
+        <module name="UnnecessarySemicolonInEnumeration"/>
         <module name="UnnecessarySemicolonInTryWithResources"/>
         <module name="UnusedCatchParameterShouldBeUnnamed"/>
         <module name="UnusedLambdaParameterShouldBeUnnamed"/>
@@ -93,7 +92,11 @@
 
         <!--Imports-->
         <module name="AvoidStarImport"/>
-        <!--<module name="CustomImportOrder"/>--> <!--TODO decide on this order-->
+        <!--<module name="CustomImportOrder">-->
+        <!--    <property name="customImportOrderRules" value="STATIC,THIRD_PARTY_PACKAGE"/>-->
+        <!--    <property name="standardPackageRegExp" value="^$"/>-->
+        <!--    <property name="sortImportsInGroupAlphabetically" value="true"/>-->
+        <!--</module>-->
         <module name="IllegalImport">
             <property name="regexp" value="true"/>
             <!--checkerqual nullability-->

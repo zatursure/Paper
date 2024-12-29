@@ -11,5 +11,5 @@
     <suppress-xpath checks="FinalClass" query="//CLASS_DEF[MODIFIERS/LITERAL_PRIVATE]"/>
 
     <!--skip for classes inside of methods-->
-    <suppress-xpath checks="HideUtilityClassConstructor" query="//CLASS_DEF[ancestor::METHOD_DEF]" />
+    <suppress-xpath checks="HideUtilityClassConstructor|MissingJavadoc(Method|Type)" query="//CLASS_DEF[ancestor::METHOD_DEF]" />
 </suppressions>

@@ -24,16 +24,13 @@ data class DiffedFileData(val diffedFiles: Set<String>, val filesToRemoveFromUnc
 
 abstract class DiffedFilesSource: ValueSource<DiffedFileData, DiffedFilesSource.Parameters> {
 
-    companion object {
-        val SPECIAL_USERS: Set<String> = setOf(
-            "Jake Potrebic"
-        )
-    }
-
     interface Parameters : ValueSourceParameters {
 
         @get:InputFile
         val uncheckedFilesTxt: RegularFileProperty
+
+        @get:InputFile
+        val specialUsers: RegularFileProperty
     }
 
     @get:Inject
@@ -45,6 +42,7 @@ abstract class DiffedFilesSource: ValueSource<DiffedFileData, DiffedFilesSource.
             commandLine(*args)
             standardOutput = out
         }
+
         return String(out.toByteArray(), Charsets.UTF_8).trim()
     }
 
@@ -52,12 +50,18 @@ abstract class DiffedFilesSource: ValueSource<DiffedFileData, DiffedFilesSource.
         val remoteName = run("git", "remote", "-v").split("\n").filter {
             it.contains("PaperMC/Paper", ignoreCase = true)
         }.take(1).map { it.split("\t")[0] }.singleOrNull() ?: "origin"
-        run("git", "fetch", remoteName, "main", "-q")
-        val changedFiles = run("git", "diff", "--name-only", "$remoteName/main...HEAD").split("\n").toSet()
+        run("git", "fetch", remoteName, "main")
+        val mergeBase = run("git", "merge-base", "HEAD", "$remoteName/main")
+        val changedFiles = run("git", "diff", "--name-only", mergeBase).split("\n").toSet()
         if (changedFiles.isNotEmpty()) {
-            val uncheckedFiles = Files.readString(parameters.uncheckedFilesTxt.path).split("\n").toSet()
-            val gitUser = System.getenv("GIT_USER") ?: run("git", "config", "--get", "user.name")
-            return if (gitUser in SPECIAL_USERS) {
+            val uncheckedFiles = Files.readString(parameters.uncheckedFilesTxt.path).trim().split("\n").toSet()
+            val gitUser = if (System.getenv("CI") == "true") {
+                System.getenv("GIT_USER")
+            } else {
+                run("git", "config", "--get", "user.name")
+            }
+            val specialUsers = Files.readString(parameters.specialUsers.path).trim().split("\n").toSet()
+            return if (gitUser in specialUsers) {
                 DiffedFileData(changedFiles, changedFiles.intersect(uncheckedFiles))
             } else {
                 DiffedFileData(changedFiles - uncheckedFiles, emptySet())
@@ -96,6 +100,7 @@ tasks.withType<Checkstyle> {
     val rootDir = project.rootDir
     val diffedFiles = providers.of(DiffedFilesSource::class) {
         parameters.uncheckedFilesTxt.set(checkstyle.configDirectory.file("unchecked-files.txt"))
+        parameters.specialUsers.set(checkstyle.configDirectory.file("users-who-can-update.txt"))
     }
     include { fileTreeElement ->
         if (fileTreeElement.isDirectory || runForAll.isPresent) {

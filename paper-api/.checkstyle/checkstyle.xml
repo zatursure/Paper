@@ -13,6 +13,18 @@
         <property name="checks" value="AnnotationOnSameLine"/>
         <property name="message" value="^Annotation '(?!(${type_use_annotations}))"/>
     </module>
+    <module name="SuppressionSingleFilter">
+        <property name="checks" value="Javadoc(Method|Type)"/>
+        <!--[A-Z].* check is for java annotations inside code blocks inside javadocs-->
+        <property name="message" value="^Unknown tag '(${custom_javadoc_tags}|[A-Z].*)'.$"/>
+    </module>
+
+    <!--Javadoc Comments-->
+    <module name="JavadocPackage"/>
+    <!--Misc-->
+    <module name="NewlineAtEndOfFile"/>
+    <module name="OrderedProperties"/>
+
     <module name="TreeWalker">
         <module name="SuppressionXpathFilter">
             <property name="file" value="${config_loc}/xpath-suppressions.xml"/>
@@ -100,25 +112,53 @@
         <module name="UnusedImports"/>
 
         <!--Javadoc Comments-->
+        <module name="AtclauseOrder">
+            <property name="tagOrder" value="@param, @return, @throws, @see, @deprecated, @hidden"/>
+        </module>
+        <module name="InvalidJavadocPosition"/>
+        <module name="JavadocBlockTagLocation"/>
+        <module name="JavadocContentLocation"/>
+        <module name="JavadocLeadingAsteriskAlign"/>
+        <module name="JavadocMethod">
+            <!--checks all, but doesn't require. If we have a doc, it should be valid-->
+            <property name="validateThrows" value="true"/>
+        </module>
+        <module name="JavadocMissingLeadingAsterisk"/>
+        <module name="JavadocMissingWhitespaceAfterAsterisk"/>
+        <module name="JavadocStyle"/> <!--checks all, but doesn't require. If we have a doc, it should be valid-->
+        <module name="JavadocTagContinuationIndentation"/>
+        <module name="JavadocType"/> <!--checks all, but doesn't require. If we have a doc, it should be valid-->
         <module name="MissingJavadocMethod">
             <property name="allowedAnnotations" value="Override, ApiStatus.Internal"/>
             <property name="ignoreMethodNamesRegex" value="^getHandlerList$"/>
         </module>
+        <module name="MissingJavadocPackage"/>
         <module name="MissingJavadocType">
             <property name="skipAnnotations" value="Generated, ApiStatus.Internal" />
         </module>
+        <module name="NonEmptyAtclauseDescription"/>
+        <module name="RequireEmptyLineBeforeBlockTagGroup"/>
 
-        <!--Metrics-->
+        <!--Metrics--> <!--N/A-->
 
         <!--Miscellaneous-->
+        <module name="ArrayTypeStyle"/>
+        <module name="AvoidEscapedUnicodeCharacters"/>
+        <module name="CommentsIndentation"/>
+        <module name="FinalParameters"/>
+
+        <module name="NoCodeInFile"/>
+        <module name="OuterTypeFilename"/>
+        <module name="UpperEll"/>
 
         <!--Modifiers-->
+        <module name="ModifierOrder"/>
+        <module name="RedundantModifier"/>
 
         <!--Naming Conventions-->
 
-        <!--Regexp-->
-
-        <!--Size Violations-->
+        <!--Regexp--> <!--N/A-->
+        <!--Size Violations--> <!--N/A-->
 
         <!--Whitespace-->
     </module>

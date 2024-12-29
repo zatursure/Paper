@@ -54,8 +54,21 @@ val typeUseAnnotations = setOf(
     "Positive",
 )
 
+data class JavadocTag(val tag: String, val appliesTo: String, val prefix: String) {
+    fun toOptionString(): String {
+        return "$tag:$appliesTo:$prefix"
+    }
+}
+
+val customJavadocTags = setOf(
+    JavadocTag("apiNote", "a", "API Note:"),
+)
+
 tasks.withType<Checkstyle> {
-    configProperties = mapOf("type_use_annotations" to typeUseAnnotations.joinToString("|"))
+    configProperties = mapOf(
+        "type_use_annotations" to typeUseAnnotations.joinToString("|"),
+        "custom_javadoc_tags" to customJavadocTags.joinToString("|") { it.tag },
+    )
     val runForAll = providers.gradleProperty("runCheckstyleForAll")
     val rootDir = project.rootDir
     val diffedFiles = providers.of(DiffedFilesSource::class) {}
@@ -249,7 +262,7 @@ tasks.withType<Javadoc> {
         "https://javadoc.io/doc/org.apache.logging.log4j/log4j-api/$log4jVersion/",
         "https://javadoc.io/doc/org.apache.maven.resolver/maven-resolver-api/1.7.3",
     )
-    options.tags("apiNote:a:API Note:")
+    options.tags(customJavadocTags.map { it.toOptionString() })
 
     inputs.files(apiAndDocs).ignoreEmptyDirectories().withPropertyName(apiAndDocs.name + "-configuration")
     val apiAndDocsElements = apiAndDocs.elements

@@ -41,10 +41,63 @@
         <module name="InterfaceIsType"/>
 
         <!--Coding-->
+        <module name="ArrayTrailingComma"/>
+        <module name="AvoidDoubleBraceInitialization"/>
+        <module name="AvoidNoArgumentSuperConstructorCall"/>
+        <module name="ConstructorsDeclarationGrouping"/>
+        <module name="CovariantEquals"/>
+        <module name="DeclarationOrder"/> <!--TODO this might be too invasive for not enough benefit-->
+        <module name="DefaultComesLast"/>
+        <module name="EmptyStatement"/>
+        <module name="EqualsAvoidNull"/>
+        <module name="EqualsHashCode"/>
+        <module name="FallThrough"/>
+        <module name="FinalLocalVariable">
+            <property name="validateEnhancedForLoopVariable" value="true"/>
+            <property name="validateUnnamedVariables" value="true"/>
+            <!--TODO atm, PARAMETER_DEF doesn't seem to function inside interfaces-->
+            <!--https://github.com/checkstyle/checkstyle/issues/16081-->
+            <property name="tokens" value="PARAMETER_DEF,VARIABLE_DEF"/>
+        </module>
+        <module name="IllegalToken"/> <!--just labels by default-->
+        <module name="IllegalType"/>
+        <module name="RequireThis">
+            <property name="validateOnlyOverlapping" value="false"/>
+        </module>
+        <module name="SimplifyBooleanExpression"/>
+        <module name="SimplifyBooleanReturn"/>
+        <module name="StringLiteralEquality"/>
+        <module name="UnnecessaryParentheses"/> <!--TODO maybe not? sometimes redundant parens are helpful-->
+        <module name="UnnecessarySemicolonAfterOuterTypeDeclaration"/>
+        <module name="UnnecessarySemicolonAfterTypeMemberDeclaration"/>
+        <module name="UnnecessarySemicolonInEnumeration"/> <!--TODO maybe not?-->
+        <module name="UnnecessarySemicolonInTryWithResources"/>
+        <module name="UnusedCatchParameterShouldBeUnnamed"/>
+        <module name="UnusedLambdaParameterShouldBeUnnamed"/>
+        <module name="UnusedLocalVariable"/>
+        <module name="WhenShouldBeUsed"/>
 
-        <!--Headers-->
+        <!--Headers--> <!--N/A-->
 
         <!--Imports-->
+        <module name="AvoidStarImport"/>
+        <!--<module name="CustomImportOrder"/>--> <!--TODO decide on this order-->
+        <module name="IllegalImport">
+            <property name="regexp" value="true"/>
+            <!--checkerqual nullability-->
+            <property name="illegalClasses" value="org\.checkerframework\.checker\.nullness\.qual\.(Nullable|NonNull|DefaultQualifier)"/>
+            <!--jetbrains nullability-->
+            <property name="illegalClasses" value="org\.jetbrains\.annotations\.(NotNull|Nullable|NotNullByDefault)"/>
+            <!--javax nullability-->
+        </module>
+        <module name="IllegalImport">
+            <property name="regexp" value="true"/>
+            <!--attempts to guard against nested imports (by looking for capital letters in imports)-->
+            <property name="illegalClasses" value="^[^\.A-Z]+(\.[^\.A-Z]+)+?(\.[A-Z][^\.]*)(\.[A-Z][^\.]*)+$"/>
+            <message key="import.illegal" value="Illegal nested import - {0}"/>
+        </module>
+        <module name="RedundantImport"/>
+        <module name="UnusedImports"/>
 
         <!--Javadoc Comments-->
         <module name="MissingJavadocMethod">

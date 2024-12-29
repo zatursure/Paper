@@ -56,10 +56,11 @@ val typeUseAnnotations = setOf(
 
 tasks.withType<Checkstyle> {
     configProperties = mapOf("type_use_annotations" to typeUseAnnotations.joinToString("|"))
+    val runForAll = providers.gradleProperty("runCheckstyleForAll")
     val rootDir = project.rootDir
     val diffedFiles = providers.of(DiffedFilesSource::class) {}
     include { fileTreeElement ->
-        if (fileTreeElement.isDirectory) {
+        if (fileTreeElement.isDirectory || runForAll.isPresent) {
             return@include true
         }
         val absPath = fileTreeElement.file.toPath().toAbsolutePath().relativeTo(rootDir.toPath())

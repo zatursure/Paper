@@ -53,7 +53,7 @@ abstract class DiffedFilesSource: ValueSource<DiffedFileData, DiffedFilesSource.
             it.contains("PaperMC/Paper", ignoreCase = true)
         }.take(1).map { it.split("\t")[0] }.singleOrNull() ?: "origin"
         run("git", "fetch", remoteName, "main", "-q")
-        val changedFiles = run("git", "diff", "--name-only", "$remoteName/main").split("\n").toSet()
+        val changedFiles = run("git", "diff", "--name-only", "$remoteName/main...HEAD").split("\n").toSet()
         if (changedFiles.isNotEmpty()) {
             val uncheckedFiles = Files.readString(parameters.uncheckedFilesTxt.path).split("\n").toSet()
             val gitUser = System.getenv("GIT_USER") ?: run("git", "config", "--get", "user.name")

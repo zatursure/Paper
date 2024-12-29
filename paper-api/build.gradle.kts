@@ -63,7 +63,7 @@ tasks.withType<Checkstyle> {
             return@include true
         }
         val absPath = fileTreeElement.file.toPath().toAbsolutePath().relativeTo(rootDir.toPath())
-        return@include fileTreeElement.isDirectory || diffedFiles.get().contains(absPath.toString())
+        return@include diffedFiles.get().contains(absPath.toString())
     }
 }
 

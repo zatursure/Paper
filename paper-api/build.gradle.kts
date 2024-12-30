@@ -50,7 +50,7 @@ abstract class DiffedFilesSource: ValueSource<DiffedFileData, DiffedFilesSource.
         val remoteName = run("git", "remote", "-v").split("\n").filter {
             it.contains("PaperMC/Paper", ignoreCase = true)
         }.take(1).map { it.split("\t")[0] }.singleOrNull() ?: "origin"
-        run("git", "fetch", remoteName, "main")
+        run("git", "fetch", remoteName, "main", "-q")
         val mergeBase = run("git", "merge-base", "HEAD", "$remoteName/main")
         val changedFiles = run("git", "diff", "--name-only", mergeBase).split("\n").toSet()
         if (changedFiles.isNotEmpty()) {

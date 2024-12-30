@@ -5,6 +5,7 @@ import io.papermc.paperweight.util.deleteForcefully
 import io.papermc.paperweight.util.path
 import java.io.ByteArrayOutputStream
 import java.nio.file.Path
+import java.nio.file.Paths
 import kotlin.io.path.readLines
 import kotlin.io.path.relativeTo
 import kotlin.io.path.writeText
@@ -129,8 +130,8 @@ val customJavadocTags = setOf(
 
 abstract class CustomCheckstyleTask : Checkstyle() {
 
-    @get:InputDirectory
-    abstract val rootPath: DirectoryProperty
+    @get:Input
+    abstract val rootPath: Property<String>
 
     @get:InputFile
     abstract val changedFilesTxt: RegularFileProperty
@@ -155,10 +156,10 @@ abstract class CustomCheckstyleTask : Checkstyle() {
             if (fileTreeElement.isDirectory || runForAll.getOrElse(false)) {
                 return@include true
             }
-            val absPath = fileTreeElement.file.toPath().toAbsolutePath().relativeTo(rootPath.path)
+            val absPath = fileTreeElement.file.toPath().toAbsolutePath().relativeTo(Paths.get(rootPath.get()))
             return@include diffedFiles.contains(absPath.toString())
         }
-        if (diffedFiles.isNotEmpty()) {
+        if (!source.isEmpty) {
             super.run()
         }
         val uncheckedFiles = filesToRemoveFromUncheckedTxt.path.readLines().toSet()
@@ -173,7 +174,7 @@ tasks.withType<CustomCheckstyleTask> {
     configProperties = mapOf(
         "custom_javadoc_tags" to customJavadocTags.joinToString("|") { it.tag },
     )
-    rootPath = project.rootDir
+    rootPath = project.rootDir.path
     changedFilesTxt = collectDiffedData.flatMap { it.changedFilesTxt }
     runForAll = providers.gradleProperty("runCheckstyleForAll").map { it.toBoolean() }
     filesToRemoveFromUncheckedTxt = collectDiffedData.flatMap { it.filesToRemoveFromUncheckedTxt }

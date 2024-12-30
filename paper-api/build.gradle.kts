@@ -143,14 +143,14 @@ abstract class CustomCheckstyleTask : Checkstyle() {
     @get:InputFile
     abstract val filesToRemoveFromUncheckedTxt: RegularFileProperty
 
-    @get:InputFile
-    abstract val typeUseAnnotations: RegularFileProperty
+    @get:Input
+    abstract val typeUseAnnotations: SetProperty<String>
 
     @TaskAction
     override fun run() {
-        val diffedFiles = changedFilesTxt.path.readLines().toSet()
+        val diffedFiles = changedFilesTxt.path.readLines().filterNot { it.isBlank() }.toSet()
         val existingProperties = configProperties?.toMutableMap() ?: mutableMapOf()
-        existingProperties["type_use_annotations"] = typeUseAnnotations.path.readLines().toSet().joinToString("|")
+        existingProperties["type_use_annotations"] = typeUseAnnotations.get().joinToString("|")
         configProperties = existingProperties
         include { fileTreeElement ->
             if (fileTreeElement.isDirectory || runForAll.getOrElse(false)) {
@@ -162,14 +162,14 @@ abstract class CustomCheckstyleTask : Checkstyle() {
         if (!source.isEmpty) {
             super.run()
         }
-        val uncheckedFiles = filesToRemoveFromUncheckedTxt.path.readLines().toSet()
+        val uncheckedFiles = filesToRemoveFromUncheckedTxt.path.readLines().filterNot { it.isBlank() }.toSet()
         if (uncheckedFiles.isNotEmpty()) {
             error("Remove the following files from unchecked-files.txt: ${uncheckedFiles.joinToString("\n\t", prefix = "\n")}")
         }
     }
 }
 
-val typeUseAnnotationsProvider = providers.fileContents(checkstyleConfigDir.file("type-use-annotations.txt")).asText.map { it.split("\n").toSet() }
+val typeUseAnnotationsProvider = providers.fileContents(checkstyleConfigDir.file("type-use-annotations.txt")).asText.map { it.trim().split("\n").toSet() }
 tasks.withType<CustomCheckstyleTask> {
     configProperties = mapOf(
         "custom_javadoc_tags" to customJavadocTags.joinToString("|") { it.tag },
@@ -178,7 +178,7 @@ tasks.withType<CustomCheckstyleTask> {
     changedFilesTxt = collectDiffedData.flatMap { it.changedFilesTxt }
     runForAll = providers.gradleProperty("runCheckstyleForAll").map { it.toBoolean() }
     filesToRemoveFromUncheckedTxt = collectDiffedData.flatMap { it.filesToRemoveFromUncheckedTxt }
-    typeUseAnnotations = checkstyleConfigDir.file("type-use-annotations.txt")
+    typeUseAnnotations = typeUseAnnotationsProvider
 }
 
 val annotationsVersion = "26.0.1"

@@ -311,7 +311,6 @@ paper-api/src/main/java/io/papermc/paper/block/fluid/type/FlowingFluidData.java
 paper-api/src/main/java/io/papermc/paper/block/fluid/FluidData.java
 paper-api/src/main/java/io/papermc/paper/block/BlockPredicate.java
 paper-api/src/main/java/io/papermc/paper/block/LockableTileState.java
-paper-api/src/main/java/io/papermc/paper/ServerBuildInfo.java
 paper-api/src/main/java/io/papermc/paper/potion/PredicateRecipeChoice.java
 paper-api/src/main/java/io/papermc/paper/potion/SuspiciousEffectEntry.java
 paper-api/src/main/java/io/papermc/paper/potion/PotionMix.java

@@ -1,19 +1,8 @@
-import io.papermc.paperweight.tasks.BaseTask
-import io.papermc.paperweight.util.cacheDir
-import io.papermc.paperweight.util.convention
-import io.papermc.paperweight.util.deleteForcefully
-import io.papermc.paperweight.util.path
-import java.io.ByteArrayOutputStream
-import java.nio.file.Path
-import java.nio.file.Paths
-import kotlin.io.path.readLines
-import kotlin.io.path.relativeTo
-import kotlin.io.path.writeText
-
 plugins {
     `java-library`
     `maven-publish`
     idea
+    id("checkstyle-conventions")
 }
 
 java {
@@ -21,164 +10,12 @@ java {
     withJavadocJar()
 }
 
-apply {
-    plugin(CustomCheckstylePlugin::class)
-}
-
-val checkstyleConfigDir = objects.directoryProperty().convention(project, Path.of(".checkstyle"))
-extensions.configure<CheckstyleExtension> {
-    toolVersion = "10.21.0"
-    configDirectory = checkstyleConfigDir
-}
-
-val gitUserProvider: Provider<String> = if (System.getenv("CI") == "true") {
-    providers.environmentVariable("GIT_USER").map { it.trim() }
-} else {
-    providers.exec { commandLine("git", "config", "--get", "user.name") }.standardOutput.asText.map { it.trim() }
-}
-val changedFilesSource = providers.of(ChangedFilesSource::class) {}
-
-val collectDiffedData = tasks.register<CollectDiffedDataTask>("collectDiffedData") {
-    uncheckedFiles.set(providers.fileContents(checkstyleConfigDir.file("unchecked-files.txt")).asText.map { it.split("\n").toSet() })
-    specialUsers.set(providers.fileContents(checkstyleConfigDir.file("users-who-can-update.txt")).asText.map { it.split("\n").toSet() })
-    changedFiles.set(changedFilesSource)
-    gitUser.set(gitUserProvider)
-}
-
-abstract class CustomCheckstylePlugin : CheckstylePlugin() {
-
-    override fun getTaskType(): Class<Checkstyle> {
-        @Suppress("UNCHECKED_CAST")
-        return CustomCheckstyleTask::class.java as Class<Checkstyle>
-    }
-}
-
-abstract class CollectDiffedDataTask : BaseTask() {
-
-    @get:Input
-    abstract val uncheckedFiles: SetProperty<String>
-
-    @get:Input
-    abstract val specialUsers: SetProperty<String>
-
-    @get:Input
-    abstract val changedFiles: SetProperty<String>
-
-    @get:Input
-    abstract val gitUser: Property<String>
-
-    @get:OutputFile
-    abstract val changedFilesTxt: RegularFileProperty
-
-    @get:OutputFile
-    abstract val filesToRemoveFromUncheckedTxt: RegularFileProperty
-
-    override fun init() {
-        changedFilesTxt.convention(layout.cacheDir("diffed-files").file("changed-files.txt"))
-        filesToRemoveFromUncheckedTxt.convention(layout.cacheDir("diffed-files").file("files-to-remove-from-unchecked.txt"))
-    }
-
-    @TaskAction
-    fun run() {
-        changedFilesTxt.path.deleteForcefully()
-        filesToRemoveFromUncheckedTxt.path.deleteForcefully()
-        if (gitUser.get() in specialUsers.get()) {
-            changedFilesTxt.path.writeText(changedFiles.get().joinToString("\n"))
-            filesToRemoveFromUncheckedTxt.path.writeText(changedFiles.get().intersect(uncheckedFiles.get()).joinToString("\n"))
-        } else {
-            changedFilesTxt.path.writeText(changedFiles.get().minus(uncheckedFiles.get()).joinToString("\n"))
-            filesToRemoveFromUncheckedTxt.path.writeText("")
-        }
-    }
-}
-
-abstract class ChangedFilesSource: ValueSource<Set<String>, ValueSourceParameters.None> {
-
-    @get:Inject
-    abstract val exec: ExecOperations
-
-    private fun run(vararg args: String): String {
-        val out = ByteArrayOutputStream()
-        exec.exec {
-            commandLine(*args)
-            standardOutput = out
-        }
-
-        return String(out.toByteArray(), Charsets.UTF_8).trim()
-    }
-
-    override fun obtain(): Set<String> {
-        val remoteName = run("git", "remote", "-v").split("\n").filter {
-            it.contains("PaperMC/Paper", ignoreCase = true)
-        }.take(1).map { it.split("\t")[0] }.singleOrNull() ?: "origin"
-        run("git", "fetch", remoteName, "main", "-q")
-        val mergeBase = run("git", "merge-base", "HEAD", "$remoteName/main")
-        val changedFiles = run("git", "diff", "--name-only", mergeBase).split("\n").filter { it.endsWith(".java") }.toSet()
-        return changedFiles
-    }
-}
-
-data class JavadocTag(val tag: String, val appliesTo: String, val prefix: String) {
-    fun toOptionString(): String {
-        return "$tag:$appliesTo:$prefix"
-    }
-}
-
 val customJavadocTags = setOf(
     JavadocTag("apiNote", "a", "API Note:"),
 )
 
-abstract class CustomCheckstyleTask : Checkstyle() {
-
-    @get:Input
-    abstract val rootPath: Property<String>
-
-    @get:InputFile
-    abstract val changedFilesTxt: RegularFileProperty
-
-    @get:Input
-    @get:Optional
-    abstract val runForAll: Property<Boolean>
-
-    @get:InputFile
-    abstract val filesToRemoveFromUncheckedTxt: RegularFileProperty
-
-    @get:Input
-    abstract val typeUseAnnotations: SetProperty<String>
-
-    @TaskAction
-    override fun run() {
-        val diffedFiles = changedFilesTxt.path.readLines().filterNot { it.isBlank() }.toSet()
-        val existingProperties = configProperties?.toMutableMap() ?: mutableMapOf()
-        existingProperties["type_use_annotations"] = typeUseAnnotations.get().joinToString("|")
-        configProperties = existingProperties
-        include { fileTreeElement ->
-            if (fileTreeElement.isDirectory || runForAll.getOrElse(false)) {
-                return@include true
-            }
-            val absPath = fileTreeElement.file.toPath().toAbsolutePath().relativeTo(Paths.get(rootPath.get()))
-            return@include diffedFiles.contains(absPath.toString())
-        }
-        if (!source.isEmpty) {
-            super.run()
-        }
-        val uncheckedFiles = filesToRemoveFromUncheckedTxt.path.readLines().filterNot { it.isBlank() }.toSet()
-        if (uncheckedFiles.isNotEmpty()) {
-            error("Remove the following files from unchecked-files.txt: ${uncheckedFiles.joinToString("\n\t", prefix = "\n")}")
-        }
-    }
-}
-
-val typeUseAnnotationsProvider = providers.fileContents(checkstyleConfigDir.file("type-use-annotations.txt")).asText.map { it.trim().split("\n").toSet() }
 tasks.withType<CustomCheckstyleTask> {
-    configProperties = mapOf(
-        "custom_javadoc_tags" to customJavadocTags.joinToString("|") { it.tag },
-    )
-    rootPath = project.rootDir.path
-    changedFilesTxt = collectDiffedData.flatMap { it.changedFilesTxt }
-    runForAll = providers.gradleProperty("runCheckstyleForAll").map { it.toBoolean() }
-    filesToRemoveFromUncheckedTxt = collectDiffedData.flatMap { it.filesToRemoveFromUncheckedTxt }
-    typeUseAnnotations = typeUseAnnotationsProvider
+    setCustomJavadocTags(customJavadocTags)
 }
 
 val annotationsVersion = "26.0.1"

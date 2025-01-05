@@ -1,14 +1,17 @@
+package io.papermc.checkstyle.checks;
+
 import com.puppycrawl.tools.checkstyle.api.DetailNode;
 import com.puppycrawl.tools.checkstyle.api.JavadocTokenTypes;
 import com.puppycrawl.tools.checkstyle.checks.javadoc.AbstractJavadocCheck;
 import com.puppycrawl.tools.checkstyle.utils.JavadocUtil;
+import io.papermc.checkstyle.Util;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Checks that parameter descriptions in Javadoc are aligned.
  */
-public final class JavadocAlignParameterDescriptions extends AbstractJavadocCheck {
+public final class JavadocAlignParameterDescriptionCheck extends AbstractJavadocCheck {
 
     @Override
     public int[] getDefaultJavadocTokens() {
@@ -31,7 +34,10 @@ public final class JavadocAlignParameterDescriptions extends AbstractJavadocChec
 
         for (final DetailNode param : params) {
             if (param.getColumnNumber() != maxColumn) {
-                final DetailNode paramNameNode = getPreviousSibling(param, JavadocTokenTypes.PARAMETER_NAME);
+                final DetailNode paramNameNode = Util.getPreviousSibling(param, JavadocTokenTypes.PARAMETER_NAME);
+                if (paramNameNode == null) {
+                    continue;
+                }
                 this.log(
                     param.getLineNumber(),
                     param.getColumnNumber() - 1,
@@ -39,13 +45,5 @@ public final class JavadocAlignParameterDescriptions extends AbstractJavadocChec
                 );
             }
         }
-    }
-
-    private static DetailNode getPreviousSibling(final DetailNode node, final int type) {
-        DetailNode sibling = JavadocUtil.getPreviousSibling(node);
-        while (sibling != null && sibling.getType() != type) {
-            sibling = JavadocUtil.getPreviousSibling(sibling);
-        }
-        return sibling;
     }
 }

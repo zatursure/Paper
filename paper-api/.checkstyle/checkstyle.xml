@@ -208,6 +208,7 @@
         <module name="WhitespaceAround"/>
 
         <!--Custom-->
-        <module name="JavadocAlignParameterDescriptions"/>
+        <module name="JavadocAlignParameterDescription"/>
+        <module name="NullabilityAnnotations"/>
     </module>
 </module>

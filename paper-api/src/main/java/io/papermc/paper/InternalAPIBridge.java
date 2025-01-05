@@ -36,4 +36,3 @@ public interface InternalAPIBridge {
      */
     DamageEffect getDamageEffect(String key);
 }
-

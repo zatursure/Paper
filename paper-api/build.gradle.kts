@@ -48,6 +48,7 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 }
 
 dependencies {
+    checkstyle(project(":paper-api:custom-checkstyle"))
 
     // api dependencies are listed transitively to API consumers
     api("com.google.guava:guava:33.3.1-jre")

@@ -60,7 +60,7 @@
         <module name="AvoidNoArgumentSuperConstructorCall"/>
         <module name="ConstructorsDeclarationGrouping"/>
         <module name="CovariantEquals"/>
-        <module name="DeclarationOrder"/> <!--TODO this might be too invasive for not enough benefit-->
+        <module name="DeclarationOrder"/>
         <module name="DefaultComesLast"/>
         <module name="EmptyStatement"/>
         <module name="EqualsAvoidNull"/>
@@ -94,14 +94,14 @@
 
         <!--Imports-->
         <module name="AvoidStarImport"/>
-        <!--<module name="CustomImportOrder">-->
-        <!--    <property name="customImportOrderRules" value="STATIC,THIRD_PARTY_PACKAGE"/>-->
-        <!--    <property name="standardPackageRegExp" value="^$"/>-->
-        <!--    <property name="sortImportsInGroupAlphabetically" value="true"/>-->
-        <!--</module>-->
+        <module name="CustomImportOrder">
+            <property name="customImportOrderRules" value="THIRD_PARTY_PACKAGE,STATIC"/>
+            <property name="standardPackageRegExp" value="^$"/>
+            <property name="sortImportsInGroupAlphabetically" value="true"/>
+        </module>
         <module name="IllegalImport">
             <property name="regexp" value="true"/>
-            <!--checkerqual nullability-->
+            <!--checker-qual nullability-->
             <property name="illegalClasses" value="org\.checkerframework\.checker\.nullness\.qual\.(Nullable|NonNull|DefaultQualifier)"/>
             <!--jetbrains nullability-->
             <property name="illegalClasses" value="org\.jetbrains\.annotations\.(NotNull|Nullable|NotNullByDefault)"/>
@@ -206,5 +206,8 @@
         <module name="TypecastParenPad"/>
         <module name="WhitespaceAfter"/>
         <module name="WhitespaceAround"/>
+
+        <!--Custom-->
+        <module name="JavadocAlignParameterDescriptions"/>
     </module>
 </module>

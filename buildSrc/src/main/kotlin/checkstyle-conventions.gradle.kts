@@ -30,7 +30,6 @@ val packagesToSkipSource: Provider<Set<String>> = providers.fileContents(localCh
 tasks.withType<CustomCheckstyleTask> {
     rootPath = project.rootDir.path
     packagesToSkip = packagesToSkipSource
-    runForAll = providers.gradleProperty("runCheckstyleForAll").map { it.toBoolean() }
     typeUseAnnotations = typeUseAnnotationsProvider
 }
 

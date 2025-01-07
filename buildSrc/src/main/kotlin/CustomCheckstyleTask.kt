@@ -16,10 +16,6 @@ abstract class CustomCheckstyleTask : Checkstyle() {
     abstract val packagesToSkip: SetProperty<String>
 
     @get:Input
-    @get:Optional
-    abstract val runForAll: Property<Boolean>
-
-    @get:Input
     abstract val typeUseAnnotations: SetProperty<String>
 
     @TaskAction

@@ -16,6 +16,25 @@ plugins {
 }
 
 subprojects {
+    if (this.name !in arrayOf("paper-api")) {
+        return@subprojects
+    }
+    apply(plugin = "checkstyle-conventions")
+
+    dependencies {
+        "checkstyle"(project(":paper-api:custom-checkstyle"))
+    }
+
+    val customJavadocTags = setOf(
+        JavadocTag("apiNote", "a", "API Note:"),
+    )
+
+    tasks.withType<CustomCheckstyleTask> {
+        setCustomJavadocTags(customJavadocTags)
+    }
+}
+
+subprojects {
     apply(plugin = "java-library")
     apply(plugin = "maven-publish")
 

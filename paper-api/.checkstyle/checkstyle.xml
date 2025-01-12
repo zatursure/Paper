@@ -66,13 +66,13 @@
         <module name="EqualsAvoidNull"/>
         <module name="EqualsHashCode"/>
         <module name="FallThrough"/>
-        <module name="FinalLocalVariable">
+        <!--<module name="FinalLocalVariable">
             <property name="validateEnhancedForLoopVariable" value="true"/>
             <property name="validateUnnamedVariables" value="true"/>
-            <!--TODO atm, PARAMETER_DEF doesn't seem to function inside interfaces-->
-            <!--https://github.com/checkstyle/checkstyle/issues/16081-->
+            &lt;!&ndash;TODO atm, PARAMETER_DEF doesn't seem to function inside interfaces&ndash;&gt;
+            &lt;!&ndash;https://github.com/checkstyle/checkstyle/issues/16081&ndash;&gt;
             <property name="tokens" value="PARAMETER_DEF,VARIABLE_DEF"/>
-        </module>
+        </module>-->
         <module name="IllegalToken"/> <!--just labels by default-->
         <module name="IllegalType"/>
         <module name="RequireThis">

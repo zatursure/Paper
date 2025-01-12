@@ -1,12 +1,33 @@
+import io.papermc.paperweight.checkstyle.JavadocTag
+import io.papermc.paperweight.checkstyle.PaperCheckstyleTask
+import io.papermc.paperweight.checkstyle.setCustomJavadocTags
+
 plugins {
     `java-library`
     `maven-publish`
     idea
+    id("io.papermc.paperweight.paper-checkstyle")
 }
 
 java {
     withSourcesJar()
     withJavadocJar()
+}
+
+val customJavadocTags = setOf(
+    JavadocTag("apiNote", "a", "API Note:"),
+)
+
+paperCheckstyle {
+    val packagesToSkipSource = providers.fileContents(projectLocalCheckstyleConfig.file("packages.txt")).asText.map { it.trim().split("\n").toSet() }
+    val typeUseAnnotationsProvider = providers.fileContents(projectLocalCheckstyleConfig.file("type-use-annotations.txt")).asText.map { it.trim().split("\n").toSet() }
+
+    directoriesToSkip.set(packagesToSkipSource)
+    typeUseAnnotations.set(typeUseAnnotationsProvider)
+}
+
+tasks.withType<PaperCheckstyleTask> {
+    setCustomJavadocTags(customJavadocTags)
 }
 
 val annotationsVersion = "26.0.1"
@@ -39,6 +60,7 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 }
 
 dependencies {
+    checkstyle(project(":paper-api:custom-checkstyle"))
 
     // api dependencies are listed transitively to API consumers
     api("com.google.guava:guava:33.3.1-jre")
@@ -190,7 +212,7 @@ tasks.withType<Javadoc> {
         "https://javadoc.io/doc/org.apache.logging.log4j/log4j-api/$log4jVersion/",
         "https://javadoc.io/doc/org.apache.maven.resolver/maven-resolver-api/1.7.3",
     )
-    options.tags("apiNote:a:API Note:")
+    options.tags(customJavadocTags.map { it.toOptionString() })
 
     inputs.files(apiAndDocs).ignoreEmptyDirectories().withPropertyName(apiAndDocs.name + "-configuration")
     val apiAndDocsElements = apiAndDocs.elements

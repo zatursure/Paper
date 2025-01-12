@@ -12,26 +12,7 @@ import java.nio.file.Path
 import kotlin.random.Random
 
 plugins {
-    id("io.papermc.paperweight.core") apply false
-}
-
-subprojects {
-    if (this.name !in arrayOf("paper-api")) {
-        return@subprojects
-    }
-    apply(plugin = "checkstyle-conventions")
-
-    dependencies {
-        "checkstyle"(project(":paper-api:custom-checkstyle"))
-    }
-
-    val customJavadocTags = setOf(
-        JavadocTag("apiNote", "a", "API Note:"),
-    )
-
-    tasks.withType<CustomCheckstyleTask> {
-        setCustomJavadocTags(customJavadocTags)
-    }
+    id("io.papermc.paperweight.core") version "2.0.0-SNAPSHOT" apply false
 }
 
 subprojects {
